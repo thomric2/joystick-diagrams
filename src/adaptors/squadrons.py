@@ -77,7 +77,14 @@ def parseFile():
 
 if __name__ == '__main__':
     profiles = parseFile()
-    for x in gen_dict_extract('deviceid', '0', profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
-        print(x)
-        # ToDo: Utilize this code to take a list an get the remaining dictionary keys
-        #       https://stackoverflow.com/questions/39818669/dynamically-accessing-nested-dictionary-keys
+    for i in range(-1, 5, 1):
+        print("********************************************")
+        print("DEVICE: ", str(i))
+        print("********************************************")
+        for x in gen_dict_extract('deviceid', str(i), profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
+            ret = profiles['GstKeyBinding']['IncomStarshipInputConcepts']
+            for k in x:
+                ret = ret[k]
+            # Button 86 seems to be when its unused. Probably a joke about getting 86'd
+            if ret['button'] != '86':
+                print(x[0] + '-' + x[1], ret['button'])
