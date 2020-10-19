@@ -77,7 +77,11 @@ def parseFile():
 
 if __name__ == '__main__':
     profiles = parseFile()
-    for i in range(-1, 5, 1):
+    buttons = dict()
+    axis = dict()
+    for i in range(-1, 4, 1):
+        button_list = list()
+        axis_list = list()
         print("********************************************")
         print("DEVICE: ", str(i))
         print("********************************************")
@@ -88,3 +92,25 @@ if __name__ == '__main__':
             # Button 86 seems to be when its unused. Probably a joke about getting 86'd
             if ret['button'] != '86':
                 print(x[0] + '-' + x[1], ret['button'])
+                button_list.append(int(ret['button']))
+            elif ret['axis'] != '26':
+                print(x[0] + '-' + x[1], ret['axis'])
+                axis_list.append(int(ret['axis']))
+
+        buttons[str(i)] = button_list
+        axis[str(i)] = axis_list
+
+    print("********************************************")
+    print("Buttons")
+    print("********************************************")
+
+    for x in buttons:
+        buttons[x].sort()
+        print("Device: " + x + " " + buttons[x].__str__())
+
+    print("********************************************")
+    print("Axis")
+    print("********************************************")
+    for x in axis:
+        axis[x].sort()
+        print("Device: " + x + " " + axis[x].__str__())
