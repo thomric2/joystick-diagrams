@@ -99,6 +99,26 @@ def translate_keyboard_id(key_id):
     return "KEY_" + val
 
 
+def translate_controller_id(button_id):
+    # TODO: Verify this. currently the items below match the button # from windows usb game controller config
+    # dpad - pov
+    # left joy - x/y
+    # right joy - Rx/Ry
+    # left trigger - Z+
+    # right trigger - Z-
+    # A - 1
+    # B - 2
+    # X - 3
+    # Y - 4
+    # LB - 5
+    # RB - 6
+    # select? - 7
+    # start? - 8
+    # left joy click - 9
+    # right joy click - 10
+    return "BUTTON_" + str(button_id)
+
+
 def translate_button_id(button_id, unmapped_button):
     # Axis: X-Axis: 8/10
     # Y-Axis: 9/11
