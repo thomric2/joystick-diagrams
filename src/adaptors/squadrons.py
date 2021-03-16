@@ -1,5 +1,6 @@
 import json
 import math
+import keyboard_scancodes
 
 # import src.adaptors.joystick_diagram_interface as jdi
 #
@@ -63,7 +64,8 @@ def gen_dict_extract(key, var):
 
 
 def parseFile():
-    path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_brunas'
+    path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_wildfire_2021-03-15'
+    print(path)
     newdata = ''
     with open(path, "r") as f:
         data = f.read()
@@ -92,6 +94,11 @@ def parseFile():
     return result
 
 
+def translate_keyboard_id(key_id):
+    val = keyboard_scancodes.LOOKUP[key_id]['leaf'][1]
+    return "KEY_" + val
+
+
 def translate_button_id(button_id, unmapped_button):
     # Axis: X-Axis: 8/10
     # Y-Axis: 9/11
@@ -117,48 +124,65 @@ def translate_button_id(button_id, unmapped_button):
     # Button 174 is unmapped button indicator
 
     if button_id <= 13 or button_id >= unmapped_button or (button_id >= 18 and button_id <= 21):
-        return "unknown"
+        return "UNKNOWN"
     if button_id == 14:
-        return "Slider-0-positive"
+        return "AXIS_SLIDER_0_P"
     if button_id == 15:
-        return "Slider-0-negative"
+        return "AXIS_SLIDER_0_N"
     if button_id == 16:
-        return "Slider-1-positive"
+        return "AXIS_SLIDER_1_P"
     if button_id == 17:
-        return "Slider-1-negative"
+        return "AXIS_SLIDER_1_N"
     if 22 <= button_id <= 39:
-        return "Button-" + str(button_id - 21)
+        return "BUTTON_" + str(button_id - 21)
     if 64 <= button_id <= 173:
-        return "Button-" + str(button_id - 45)
+        return "BUTTON_" + str(button_id - 45)
     if button_id == 40:
-        return "Z-Axis-positive"
+        return "AXIS_Z_P"
     if button_id == 41:
-        return "Z-Axis-negative"
+        return "AXIS_Z_N"
     if button_id == 42:
-        return "Rx-Axis-positive"
+        return "AXIS_RX_P"
     if button_id == 43:
-        return "Rx-Axis-negative"
+        return "AXIS_RX_N"
     if button_id == 44:
-        return "Ry-Axis-positive"
+        return "AXIS_RY_P"
     if button_id == 45:
-        return "Ry-Axis-negative"
+        return "AXIS_RY_N"
     if button_id == 46:
-        return "Rz-Axis-positive"
+        return "AXIS_RZ_P"
     if button_id == 47:
-        return "Rz-Axis-negative"
+        return "AXIS_RZ_N"
     if 48 <= button_id <= 63:
         pov_num = math.floor((button_id-48) / 4) + 1
         dir_num = button_id % 4
         if dir_num == 0:
-            direction = 'up'
+            direction = 'U'
         elif dir_num == 1:
-            direction = 'down'
+            direction = 'D'
         elif dir_num == 2:
-            direction = 'left'
+            direction = 'L'
         else:
-            direction = 'right'
+            direction = 'R'
 
-        return "POV" + str(pov_num) + '-' + direction
+        return "POV_" + str(pov_num) + '_' + direction
+
+
+def translate_axis_id(axis_id, unmapped_axis):
+    # TODO: Validate Axis, ensure invert is not set
+    #       Also see what issues invert can cause
+    if axis_id >= unmapped_axis:
+        return "AXIS_UNKNOWN"
+    elif axis_id == 8:
+        return "AXIS_X_P"
+    elif axis_id == 10:
+        return "AXIS_X_N"
+    elif axis_id == 9:
+        return "AXIS_Y_N"
+    elif axis_id == 11:
+        return "AXIS_Y_P"
+    else:
+        return "AXIS_" + str(axis_id)
 
 
 if __name__ == '__main__':
@@ -175,26 +199,36 @@ if __name__ == '__main__':
     device_ids = sorted(set(gen_dict_extract('deviceid',
                                       profiles['GstKeyBinding']['IncomStarshipInputConcepts'])))
 
-    for i in device_ids:
+    for device_id in device_ids:
         button_list = list()
         axis_list = list()
         print("********************************************")
-        print("DEVICE", str(i) + ": ", profiles['GstInput']['JoystickDevice' + str(int(i)+1)])
+        print("DEVICE", device_id + ": ", profiles['GstInput']['JoystickDevice' + str(int(device_id)+1)])
         print("********************************************")
-        for x in gen_dict_extract_value('deviceid', str(i), profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
+        for x in gen_dict_extract_value('deviceid', device_id,
+                                        profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
             ret = profiles['GstKeyBinding']['IncomStarshipInputConcepts']
             for k in x:
                 ret = ret[k]
 
             if ret['button'] != str(unmapped_button):
-                print(x[0] + '-' + x[1], translate_button_id(int(ret['button']), unmapped_button))
+                if device_id == '-1':
+                    if ret['button'] == '0':
+                        print(x[0] + '-' + x[1], 'KEY_UNKNOWN')
+                    else:
+                        print(x[0] + '-' + x[1], translate_keyboard_id(int(ret['button'])))
+                else:
+                    print(x[0] + '-' + x[1], translate_button_id(int(ret['button']), unmapped_button))
                 button_list.append(int(ret['button']))
             elif ret['axis'] != str(unmapped_axis):
-                print(x[0] + '-' + x[1], "Axis-" + ret['axis'])
+                if device_id == '-1':
+                    print(x[0] + '-' + x[1], "TBD Axis: " + ret['axis'])
+                else:
+                    print(x[0] + '-' + x[1], translate_axis_id(int(ret['axis']), unmapped_axis))
                 axis_list.append(int(ret['axis']))
 
-        buttons[str(i)] = button_list
-        axis[str(i)] = axis_list
+        buttons[device_id] = button_list
+        axis[device_id] = axis_list
 
     print("********************************************")
     print("Buttons")
