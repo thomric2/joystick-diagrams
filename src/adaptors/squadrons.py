@@ -15,17 +15,6 @@ import keyboard_scancodes
 #         self.joystick_listing = {}
 
 
-def findDeviceLeafs(mapping_dict, device_id, res):
-    nodes = mapping_dict.keys()
-    for node in nodes:
-        subnodes = mapping_dict[node].values()
-        for subnode in subnodes:
-            if isinstance(subnode, dict):
-                findDeviceLeafs(subnode, device_id, res=res)
-            else:
-                print(node)
-
-
 # https://stackoverflow.com/a/11570745
 def paths(tree, cur=()):
     if not tree or not isinstance(tree, dict):
@@ -64,7 +53,7 @@ def gen_dict_extract(key, var):
 
 
 def parseFile():
-    path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_wildfire_2021-03-15'
+    path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_brunas'
     print(path)
     newdata = ''
     with open(path, "r") as f:
@@ -89,8 +78,6 @@ def parseFile():
     # with open(path + ".json", "w") as outfile:
     #     json.dump(result, outfile, indent=4)
 
-    #findDeviceLeafs(result, 1)
-
     return result
 
 
@@ -100,26 +87,105 @@ def translate_keyboard_id(key_id):
 
 
 def translate_controller_id(button_id):
-    # TODO: Verify this. currently the items below match the button # from windows usb game controller config
-    # dpad - pov
-    # left joy - x/y
-    # right joy - Rx/Ry
-    # left trigger - Z+
-    # right trigger - Z-
-    # A - 1
-    # B - 2
-    # X - 3
-    # Y - 4
-    # LB - 5
-    # RB - 6
-    # select? - 7
-    # start? - 8
-    # left joy click - 9
-    # right joy click - 10
-    return "BUTTON_" + str(button_id)
+    # Gamepad Preset
+    # 0 = Custom
+    # 1 = Standard
+    # 2 = Aviator
+    # 3 = Southpaw
+
+    # The items below match the button # from windows usb game controller config and the corresponding SWS Button/Axis
+    # For a third part XBox One controller
+
+    # dpad - POV_U : SWS Button 0
+    if button_id == 0:
+        return "POV_1_U"
+    # dpad - POV_D : SWS Button 1
+    if button_id == 1:
+        return "POV_1_D"
+    # dpad - POV_L : SWS Button 2
+    if button_id == 2:
+        return "POV_1_L"
+    # dpad - POV_R : SWS Button 3
+    if button_id == 3:
+        return "POV_1_R"
+
+    # Y - 4 : SWS Button 4
+    if button_id == 4:
+        return "BUTTON_4"
+    # A - 1 : SWS Button 5
+    if button_id == 5:
+        return "BUTTON_1"
+    # X - 3 : SWS Button 6
+    if button_id == 6:
+        return "BUTTON_3"
+    # B - 2 : SWS Button 7
+    if button_id == 7:
+        return "BUTTON_2"
+    # MISSING SWS Button 8
+    if button_id == 8:
+        return "BUTTON_UNKNOWN_8"
+    # MISSING SWS Button 9
+    if button_id == 9:
+        return "BUTTON_UNKNOWN_9"
+
+    # left joy click - 9 : SWS Button 10
+    if button_id == 10:
+        return "BUTTON_9"
+    # right joy click - 10 : SWS Button 11
+    if button_id == 11:
+        return "BUTTON_10"
+    # Menu/Start - 8 : SWS Button 12
+    if button_id == 12:
+        return "BUTTON_8"
+    # View/Back - 7 : SWS Button 13
+    if button_id == 13:
+        return "BUTTON_7"
+    # left trigger - Z+ : SWS Button 14
+    if button_id == 14:
+        return "AXIS_Z_P"
+    # right trigger - Z- : SWS Button 15
+    if button_id == 15:
+        return "AXIS_Z_N"
+    # LB - 5 : SWS Button 16
+    if button_id == 16:
+        return "BUTTON_5"
+    # RB - 6 : SWS Button 17
+    if button_id == 17:
+        return "BUTTON_6"
+
+    return "BUTTON_UNKNOWN_" + str(button_id)
 
 
-def translate_button_id(button_id, unmapped_button):
+def translate_controller_axis_id(axis_id):
+    # left joy X+ : Axis 2
+    # left joy X- : Axis 4
+    # left joy Y+ : Axis 3
+    # left joy Y- : Axis 5
+    # right joy Rx+ : Axis 8
+    # right joy Rx- : Axis 10
+    # right joy Ry+ : Axis 9 ? In game this is up but usb controller shows pressing up is negative axis?
+    # right joy Ry- : Axis 11 ? In game this is down but usb controller shows pressing down is positive axis?
+    if axis_id == 8:
+        return "AXIS_RX_P"
+    if axis_id == 10:
+        return "AXIS_RX_N"
+    if axis_id == 9:
+        return "AXIS_RY_N"
+    if axis_id == 11:
+        return "AXIS_RY_P"
+    if axis_id == 2:
+        return "AXIS_X_P"
+    if axis_id == 4:
+        return "AXIS_X_N"
+    if axis_id == 5:
+        return "AXIS_Y_N"
+    if axis_id == 3:
+        return "AXIS_Y_P"
+
+    return "AXIS_UNKNOWN_" + str(axis_id)
+
+
+def translate_button_id(button_id):
     # Axis: X-Axis: 8/10
     # Y-Axis: 9/11
     # Axis 26 is unmapped Axis indicator
@@ -143,8 +209,6 @@ def translate_button_id(button_id, unmapped_button):
     # Button 19-127 = 64-173
     # Button 174 is unmapped button indicator
 
-    if button_id <= 13 or button_id >= unmapped_button or (button_id >= 18 and button_id <= 21):
-        return "UNKNOWN"
     if button_id == 14:
         return "AXIS_SLIDER_0_P"
     if button_id == 15:
@@ -187,22 +251,22 @@ def translate_button_id(button_id, unmapped_button):
 
         return "POV_" + str(pov_num) + '_' + direction
 
+    return "BUTTON_UNKNOWN_" + str(button_id)
 
-def translate_axis_id(axis_id, unmapped_axis):
+
+def translate_axis_id(axis_id):
     # TODO: Validate Axis, ensure invert is not set
     #       Also see what issues invert can cause
-    if axis_id >= unmapped_axis:
-        return "AXIS_UNKNOWN"
-    elif axis_id == 8:
+    if axis_id == 8:
         return "AXIS_X_P"
-    elif axis_id == 10:
+    if axis_id == 10:
         return "AXIS_X_N"
-    elif axis_id == 9:
+    if axis_id == 9:
         return "AXIS_Y_N"
-    elif axis_id == 11:
+    if axis_id == 11:
         return "AXIS_Y_P"
-    else:
-        return "AXIS_" + str(axis_id)
+
+    return "AXIS_UNKNOWN_" + str(axis_id)
 
 
 if __name__ == '__main__':
@@ -238,29 +302,14 @@ if __name__ == '__main__':
                     else:
                         print(x[0] + '-' + x[1], translate_keyboard_id(int(ret['button'])))
                 else:
-                    print(x[0] + '-' + x[1], translate_button_id(int(ret['button']), unmapped_button))
+                    print(x[0] + '-' + x[1], translate_button_id(int(ret['button'])))
                 button_list.append(int(ret['button']))
             elif ret['axis'] != str(unmapped_axis):
                 if device_id == '-1':
                     print(x[0] + '-' + x[1], "TBD Axis: " + ret['axis'])
                 else:
-                    print(x[0] + '-' + x[1], translate_axis_id(int(ret['axis']), unmapped_axis))
+                    print(x[0] + '-' + x[1], translate_axis_id(int(ret['axis'])))
                 axis_list.append(int(ret['axis']))
 
         buttons[device_id] = button_list
         axis[device_id] = axis_list
-
-    print("********************************************")
-    print("Buttons")
-    print("********************************************")
-
-    for x in buttons:
-        buttons[x].sort()
-        print("Device: " + x + " " + buttons[x].__str__())
-
-    print("********************************************")
-    print("Axis")
-    print("********************************************")
-    for x in axis:
-        axis[x].sort()
-        print("Device: " + x + " " + axis[x].__str__())

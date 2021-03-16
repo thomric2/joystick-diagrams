@@ -185,8 +185,8 @@ for key, codes in SCANCODES.items():
 
 
 # Lock in duplicate key values to chosen types below:
-LOOKUP[0x1C]["leaf"][1] = "NEWLINE"
-LOOKUP[0x9C]["leaf"][1] = "NEWLINE"
+LOOKUP[0x1C]["leaf"][1] = "ENTER"
+LOOKUP[0x9C]["leaf"][1] = "ENTER"
 LOOKUP[0x0E]["leaf"][1] = "BKSP"
 LOOKUP[0x8E]["leaf"][1] = "BKSP"
 LOOKUP[0x0F]["leaf"][1] = "TAB"
