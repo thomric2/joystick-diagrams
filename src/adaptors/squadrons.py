@@ -1,6 +1,7 @@
 import json
 import math
 import keyboard_scancodes
+import csv
 
 # import src.adaptors.joystick_diagram_interface as jdi
 #
@@ -52,8 +53,7 @@ def gen_dict_extract(key, var):
                 yield from gen_dict_extract(key, v)
 
 
-def parseFile():
-    path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_brunas'
+def parseFile(path):
     print(path)
     newdata = ''
     with open(path, "r") as f:
@@ -165,6 +165,7 @@ def translate_controller_axis_id(axis_id):
     # right joy Rx- : Axis 10
     # right joy Ry+ : Axis 9 ? In game this is up but usb controller shows pressing up is negative axis?
     # right joy Ry- : Axis 11 ? In game this is down but usb controller shows pressing down is positive axis?
+    # TODO: possibly add negate as a parameter. Negate indicates if the axis is negative aka Left or Down
     if axis_id == 8:
         return "AXIS_RX_P"
     if axis_id == 10:
@@ -181,6 +182,31 @@ def translate_controller_axis_id(axis_id):
         return "AXIS_Y_N"
     if axis_id == 3:
         return "AXIS_Y_P"
+
+    return "AXIS_UNKNOWN_" + str(axis_id)
+
+
+def translate_mouse_axis_id(axis_id):
+    # Mouse X+ : Axis 2
+    # Mouse X- : Axis 4
+    # Mouse Y+ : Axis 3
+    # Mouse Y- : Axis 5
+    # Scroll+ : Axis 14
+    # Scroll- : Axis 15
+
+    # TODO: possibly add negate as a parameter. Negate indicates if the axis is negative aka Left or Down
+    if axis_id == 2:
+        return "AXIS_X_P"
+    if axis_id == 4:
+        return "AXIS_X_N"
+    if axis_id == 5:
+        return "AXIS_Y_N"
+    if axis_id == 3:
+        return "AXIS_Y_P"
+    if axis_id == 14:
+        return "AXIS_SCROLL_P"
+    if axis_id == 15:
+        return "AXIS_SCROLL_N"
 
     return "AXIS_UNKNOWN_" + str(axis_id)
 
@@ -255,8 +281,7 @@ def translate_button_id(button_id):
 
 
 def translate_axis_id(axis_id):
-    # TODO: Validate Axis, ensure invert is not set
-    #       Also see what issues invert can cause
+    # TODO: possibly add negate as a parameter. Negate indicates if the axis is negative aka Left or Down
     if axis_id == 8:
         return "AXIS_X_P"
     if axis_id == 10:
@@ -270,46 +295,99 @@ def translate_axis_id(axis_id):
 
 
 if __name__ == '__main__':
-    profiles = parseFile()
+    profile_path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_brunas'
+    profiles = parseFile(profile_path)
+
+    # csv_columns = ['action', 'instance', 'altbutton', 'axis', 'button', 'deviceid', 'identifier', 'modifier',
+    #                'negate', 'type']
+    # csv_file = profile_path + '.csv'
+    # profile_data = []
+    # for action in profiles['GstKeyBinding']['IncomStarshipInputConcepts']:
+    #     for instance in profiles['GstKeyBinding']['IncomStarshipInputConcepts'][action]:
+    #         instance_dict = profiles['GstKeyBinding']['IncomStarshipInputConcepts'][action][instance].copy()
+    #         instance_dict['action'] = action
+    #         instance_dict['instance'] = instance
+    #         profile_data.append(instance_dict)
+    # with open(csv_file, 'w', newline='') as cfile:
+    #     writer = csv.DictWriter(cfile, fieldnames=csv_columns)
+    #     writer.writeheader()
+    #     for data in profile_data:
+    #         writer.writerow(data)
+
     buttons = dict()
     axis = dict()
     if int(profiles['GstKeyBinding']['InputDataVersion']) < 4:
         unmapped_button = 86
+        unmapped_mouse_button = 8
         unmapped_axis = 26
+        unmapped_keyboard_button = 0
     else:
         unmapped_button = 174
+        unmapped_mouse_button = 8
         unmapped_axis = 26
+        unmapped_keyboard_button = 0
 
     device_ids = sorted(set(gen_dict_extract('deviceid',
                                       profiles['GstKeyBinding']['IncomStarshipInputConcepts'])))
 
-    for device_id in device_ids:
-        button_list = list()
-        axis_list = list()
-        print("********************************************")
-        print("DEVICE", device_id + ": ", profiles['GstInput']['JoystickDevice' + str(int(device_id)+1)])
-        print("********************************************")
-        for x in gen_dict_extract_value('deviceid', device_id,
-                                        profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
-            ret = profiles['GstKeyBinding']['IncomStarshipInputConcepts']
-            for k in x:
-                ret = ret[k]
+    device_types = sorted(set(gen_dict_extract('type',
+                                      profiles['GstKeyBinding']['IncomStarshipInputConcepts'])))
+    for device_type in device_types:
+        for device_id in device_ids:
+            button_list = list()
+            axis_list = list()
+            header_printed = False
+            if device_id == '-1':
+                if device_type == '0':
+                    profiles['GstInput']['JoystickDevice' + str(int(device_id) + 1)] = 'Mouse'
+                elif device_type == '1':
+                    profiles['GstInput']['JoystickDevice' + str(int(device_id) + 1)] = 'Controller'
+                elif device_type == '2':
+                    profiles['GstInput']['JoystickDevice' + str(int(device_id) + 1)] = 'Keyboard'
+                else:
+                    profiles['GstInput']['JoystickDevice' + str(int(device_id) + 1)] = 'To Be Determined Device'
+            for x in gen_dict_extract_value('deviceid', device_id,
+                                            profiles['GstKeyBinding']['IncomStarshipInputConcepts'], None):
+                ret = profiles['GstKeyBinding']['IncomStarshipInputConcepts']
+                for k in x:
+                    ret = ret[k]
 
-            if ret['button'] != str(unmapped_button):
-                if device_id == '-1':
-                    if ret['button'] == '0':
-                        print(x[0] + '-' + x[1], 'KEY_UNKNOWN')
+                if ret['type'] == device_type:
+                    if not header_printed:
+                        header_printed = True
+                        print("********************************************")
+                        print(profiles['GstInput']['JoystickDevice' + str(int(device_id) + 1)])
+                        print("********************************************")
+                    if ret['negate'] == '1':
+                        axis_direction = '_N'
                     else:
-                        print(x[0] + '-' + x[1], translate_keyboard_id(int(ret['button'])))
-                else:
-                    print(x[0] + '-' + x[1], translate_button_id(int(ret['button'])))
-                button_list.append(int(ret['button']))
-            elif ret['axis'] != str(unmapped_axis):
-                if device_id == '-1':
-                    print(x[0] + '-' + x[1], "TBD Axis: " + ret['axis'])
-                else:
-                    print(x[0] + '-' + x[1], translate_axis_id(int(ret['axis'])))
-                axis_list.append(int(ret['axis']))
+                        axis_direction = '_P'
+                    if ret['type'] == '0':  # Mouse
+                        if ret['axis'] != str(unmapped_axis):
+                            print(x[0] + axis_direction, translate_mouse_axis_id(int(ret['axis'])))
+                            axis_list.append(int(ret['axis']))
+                        elif ret['button'] != str(unmapped_mouse_button):
+                            print(x[0], 'BUTTON_' + ret['button'])
+                            button_list.append(int(ret['button']))
+                    elif ret['type'] == '1':  # Controller
+                        if ret['axis'] != str(unmapped_axis):
+                            print(x[0] + axis_direction, translate_controller_axis_id(int(ret['axis'])))
+                            axis_list.append(int(ret['axis']))
+                        elif ret['button'] != str(unmapped_button):
+                            print(x[0], translate_controller_id(int(ret['button'])))
+                            button_list.append(int(ret['button']))
+                    elif ret['type'] == '2':  # Keyboard
+                        if ret['button'] != str(unmapped_keyboard_button):
+                            print(x[0], translate_keyboard_id(int(ret['button'])))
+                            button_list.append(int(ret['button']))
+                    elif ret['type'] == '3':  # HOTAS
+                        if ret['axis'] != str(unmapped_axis):
+                            print(x[0] + axis_direction, translate_axis_id(int(ret['axis'])))
+                            axis_list.append(int(ret['axis']))
+                        elif ret['button'] != str(unmapped_button):
+                            print(x[0], translate_button_id(int(ret['button'])))
+                            button_list.append(int(ret['button']))
 
-        buttons[device_id] = button_list
-        axis[device_id] = axis_list
+
+            buttons[device_id] = button_list
+            axis[device_id] = axis_list
