@@ -2,6 +2,7 @@ import json
 import math
 import keyboard_scancodes
 import csv
+from squadrons_text_map import joystick_text_map, kbm_text_map
 
 # import src.adaptors.joystick_diagram_interface as jdi
 #
@@ -295,7 +296,7 @@ def translate_axis_id(axis_id):
 
 
 if __name__ == '__main__':
-    profile_path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_brunas'
+    profile_path = 'D:/RDT2/SWS/joystick-diagrams/ProfileOptions_profile_synced_gythern_hosas'
     profiles = parseFile(profile_path)
 
     # csv_columns = ['action', 'instance', 'altbutton', 'axis', 'button', 'deviceid', 'identifier', 'modifier',
@@ -362,30 +363,44 @@ if __name__ == '__main__':
                         axis_direction = '_N'
                     else:
                         axis_direction = '_P'
+
+                    if ret['type'] == '0' or ret['type'] == '2':  # Mouse or keyboard
+                        try:
+                            event_desc = kbm_text_map[x[0] + axis_direction]
+                        except KeyError:
+                            event_desc = kbm_text_map[x[0]]
+                    elif ret['type'] == '1' or ret['type'] == '3':  # Controller or HOTAS
+                        try:
+                            event_desc = joystick_text_map[x[0] + axis_direction]
+                        except KeyError:
+                            event_desc = joystick_text_map[x[0]]
+                    else:
+                        event_desc = ''
+
                     if ret['type'] == '0':  # Mouse
                         if ret['axis'] != str(unmapped_axis):
-                            print(x[0] + axis_direction, translate_mouse_axis_id(int(ret['axis'])))
+                            print(translate_mouse_axis_id(int(ret['axis'])), ":::", event_desc)
                             axis_list.append(int(ret['axis']))
                         elif ret['button'] != str(unmapped_mouse_button):
-                            print(x[0], 'BUTTON_' + ret['button'])
+                            print('BUTTON_' + ret['button'], ":::", event_desc)
                             button_list.append(int(ret['button']))
                     elif ret['type'] == '1':  # Controller
                         if ret['axis'] != str(unmapped_axis):
-                            print(x[0] + axis_direction, translate_controller_axis_id(int(ret['axis'])))
+                            print(translate_controller_axis_id(int(ret['axis'])), ":::", event_desc)
                             axis_list.append(int(ret['axis']))
                         elif ret['button'] != str(unmapped_button):
-                            print(x[0], translate_controller_id(int(ret['button'])))
+                            print(translate_controller_id(int(ret['button'])), ":::", event_desc)
                             button_list.append(int(ret['button']))
                     elif ret['type'] == '2':  # Keyboard
                         if ret['button'] != str(unmapped_keyboard_button):
-                            print(x[0], translate_keyboard_id(int(ret['button'])))
+                            print(translate_keyboard_id(int(ret['button'])), ":::", event_desc)
                             button_list.append(int(ret['button']))
                     elif ret['type'] == '3':  # HOTAS
                         if ret['axis'] != str(unmapped_axis):
-                            print(x[0] + axis_direction, translate_axis_id(int(ret['axis'])))
+                            print(translate_axis_id(int(ret['axis'])), ":::", event_desc)
                             axis_list.append(int(ret['axis']))
                         elif ret['button'] != str(unmapped_button):
-                            print(x[0], translate_button_id(int(ret['button'])))
+                            print(translate_button_id(int(ret['button'])), ":::", event_desc)
                             button_list.append(int(ret['button']))
 
 
